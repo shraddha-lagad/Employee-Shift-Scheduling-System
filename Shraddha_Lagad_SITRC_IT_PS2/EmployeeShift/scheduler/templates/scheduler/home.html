@@ -1,0 +1,246 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Employee Shift Scheduling System</title>
+
+    <link rel="stylesheet"
+          href="{% static 'scheduler/style.css' %}">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <header>
+            <h1>Employee Shift Scheduling System</h1>
+            <p class="subtitle">
+                Manage employees and their work shifts
+            </p>
+        </header>
+
+        <!-- Popup success and error messages -->
+        {% if messages %}
+            <script>
+                {% for message in messages %}
+                    alert("{{ message|escapejs }}");
+                {% endfor %}
+            </script>
+        {% endif %}
+
+
+        <!-- ADD EMPLOYEE -->
+        <section>
+            <h2>Add Employee</h2>
+
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="employee">
+
+                <label for="employee_name">Employee Name</label>
+                <input
+                    type="text"
+                    id="employee_name"
+                    name="name"
+                    placeholder="Enter employee name"
+                    required
+                >
+
+                <label for="employee_email">Email Address</label>
+                <input
+                    type="email"
+                    id="employee_email"
+                    name="email"
+                    placeholder="Enter email address"
+                    required
+                >
+
+                <button type="submit">Add Employee</button>
+            </form>
+        </section>
+
+
+        <!-- CREATE SHIFT -->
+        <section>
+            <h2>Create Shift</h2>
+
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="shift">
+
+                <label for="shift_date">Shift Date</label>
+                <input
+                    type="date"
+                    id="shift_date"
+                    name="date"
+                    required
+                >
+
+                <label for="start_time">Start Time</label>
+                <input
+                    type="time"
+                    id="start_time"
+                    name="start_time"
+                    required
+                >
+
+                <label for="end_time">End Time</label>
+                <input
+                    type="time"
+                    id="end_time"
+                    name="end_time"
+                    required
+                >
+
+                <label class="checkbox-label">
+                    <input type="checkbox" name="overnight">
+                    Overnight Shift
+                </label>
+
+                <button type="submit">Create Shift</button>
+            </form>
+        </section>
+
+
+        <!-- ASSIGN EMPLOYEE -->
+        <section>
+            <h2>Assign Employee to Shift</h2>
+
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="assign">
+
+                <label for="shift_id">Select Shift</label>
+
+                <select name="shift_id" id="shift_id" required>
+                    <option value="">Choose a shift</option>
+
+                    {% for shift in shifts %}
+                        <option value="{{ shift.id }}">
+                            {{ shift.date }} |
+                            {{ shift.start_time }} - {{ shift.end_time }}
+                            {% if shift.overnight %}(Overnight){% endif %}
+                            {% if shift.employees.exists %}(Assigned){% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <p class="help-text">
+                    Select one employee for the chosen shift.
+                </p>
+
+                <div class="employee-options">
+                    {% for employee in employees %}
+                        <label class="employee-option">
+                            <input
+                                type="radio"
+                                name="employee_id"
+                                value="{{ employee.id }}"
+                                required
+                            >
+                            <span>
+                                <strong>{{ employee.name }}</strong>
+                                <small>{{ employee.email }}</small>
+                            </span>
+                        </label>
+                    {% empty %}
+                        <p>No employees available. Add an employee first.</p>
+                    {% endfor %}
+                </div>
+
+                <button type="submit">Assign Employee</button>
+            </form>
+        </section>
+
+
+        <!-- EMPLOYEE LIST -->
+        <section>
+            <h2>Employees</h2>
+
+            {% for employee in employees %}
+                <div class="record">
+                    <div class="record-details">
+                        <strong>{{ employee.name }}</strong>
+                        <span>{{ employee.email }}</span>
+                    </div>
+
+                    <form method="post"
+                          class="delete-form"
+                          onsubmit="return confirm('Delete this employee?');">
+                        {% csrf_token %}
+
+                        <input type="hidden"
+                               name="action"
+                               value="delete_employee">
+
+                        <input type="hidden"
+                               name="employee_id"
+                               value="{{ employee.id }}">
+
+                        <button type="submit" class="delete-button">
+                            Delete
+                        </button>
+                    </form>
+                </div>
+            {% empty %}
+                <p class="empty-message">No employees added yet.</p>
+            {% endfor %}
+        </section>
+
+
+        <!-- SCHEDULED SHIFTS -->
+        <section>
+            <h2>Scheduled Shifts</h2>
+
+            {% for shift in shifts %}
+                <div class="record shift-record">
+                    <div class="record-details">
+                        <strong>Date: {{ shift.date }}</strong>
+
+                        <span>
+                            Time: {{ shift.start_time }} -
+                            {{ shift.end_time }}
+                            {% if shift.overnight %}(Overnight){% endif %}
+                        </span>
+
+                        <span>
+                            Employee:
+                            {% for employee in shift.employees.all %}
+                                {{ employee.name }}
+                            {% empty %}
+                                Not assigned
+                            {% endfor %}
+                        </span>
+                    </div>
+
+                    <form method="post"
+                          class="delete-form"
+                          onsubmit="return confirm('Delete this shift?');">
+                        {% csrf_token %}
+
+                        <input type="hidden"
+                               name="action"
+                               value="delete_shift">
+
+                        <input type="hidden"
+                               name="shift_id"
+                               value="{{ shift.id }}">
+
+                        <button type="submit" class="delete-button">
+                            Delete Shift
+                        </button>
+                    </form>
+                </div>
+            {% empty %}
+                <p class="empty-message">No shifts created yet.</p>
+            {% endfor %}
+        </section>
+
+    </div>
+
+</body>
+</html>
